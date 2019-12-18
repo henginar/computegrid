@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/UIComputeGridManager">
+        <file>computegridmanager.ico</file>
+    </qresource>
+</RCC>

@@ -1,0 +1,53 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.28307.902
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "computegridworker", "computegridworker\computegridworker.vcxproj", "{ED1FD4BA-70FF-4052-8439-1301DD74587C}"
+	ProjectSection(ProjectDependencies) = postProject
+		{1C16D926-75EB-41B4-9970-6DF497D5EE53} = {1C16D926-75EB-41B4-9970-6DF497D5EE53}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "computegridmanager", "computegridmanager\computegridmanager.vcxproj", "{B12702AD-ABFB-343A-A199-8E24837244A3}"
+	ProjectSection(ProjectDependencies) = postProject
+		{1C16D926-75EB-41B4-9970-6DF497D5EE53} = {1C16D926-75EB-41B4-9970-6DF497D5EE53}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "computegridcommons", "computegridcommons\computegridcommons.vcxproj", "{1C16D926-75EB-41B4-9970-6DF497D5EE53}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "setups", "setups", "{78259FFC-4B6B-4ED1-8A6A-97F6EEAD3C8A}"
+EndProject
+Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "computegridworkersetup", "setups\computegridworkersetup\computegridworkersetup.vdproj", "{2657804B-63B9-4701-BB85-6FEF9C362A78}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{ED1FD4BA-70FF-4052-8439-1301DD74587C}.Debug|x64.ActiveCfg = Debug|x64
+		{ED1FD4BA-70FF-4052-8439-1301DD74587C}.Debug|x64.Build.0 = Debug|x64
+		{ED1FD4BA-70FF-4052-8439-1301DD74587C}.Release|x64.ActiveCfg = Release|x64
+		{ED1FD4BA-70FF-4052-8439-1301DD74587C}.Release|x64.Build.0 = Release|x64
+		{B12702AD-ABFB-343A-A199-8E24837244A3}.Debug|x64.ActiveCfg = Debug|x64
+		{B12702AD-ABFB-343A-A199-8E24837244A3}.Debug|x64.Build.0 = Debug|x64
+		{B12702AD-ABFB-343A-A199-8E24837244A3}.Release|x64.ActiveCfg = Release|x64
+		{B12702AD-ABFB-343A-A199-8E24837244A3}.Release|x64.Build.0 = Release|x64
+		{1C16D926-75EB-41B4-9970-6DF497D5EE53}.Debug|x64.ActiveCfg = Debug|x64
+		{1C16D926-75EB-41B4-9970-6DF497D5EE53}.Debug|x64.Build.0 = Debug|x64
+		{1C16D926-75EB-41B4-9970-6DF497D5EE53}.Release|x64.ActiveCfg = Release|x64
+		{1C16D926-75EB-41B4-9970-6DF497D5EE53}.Release|x64.Build.0 = Release|x64
+		{2657804B-63B9-4701-BB85-6FEF9C362A78}.Debug|x64.ActiveCfg = Debug
+		{2657804B-63B9-4701-BB85-6FEF9C362A78}.Release|x64.ActiveCfg = Release
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{2657804B-63B9-4701-BB85-6FEF9C362A78} = {78259FFC-4B6B-4ED1-8A6A-97F6EEAD3C8A}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		Qt5Version = msvc2017_64
+		SolutionGuid = {8444BC45-3531-4BF8-8426-C20CA49C8EBD}
+	EndGlobalSection
+EndGlobal

@@ -1,0 +1,7 @@
+<RCC>
+    <qresource prefix="/UIComputeGridWorker">
+        <file>computegridworker.ico</file>
+        <file>Resources/close.png</file>
+        <file>Resources/show.png</file>
+    </qresource>
+</RCC>
