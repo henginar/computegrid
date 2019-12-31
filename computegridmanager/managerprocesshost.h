@@ -31,6 +31,10 @@ public:
 private:
 	bool startNetworkServer(quint16 _port);
 	bool stopNetworkServer();
+	bool sendPacket(NetworkPacket & _np, NetworkClientInfo & _nci);
+	bool isNetworkListening();
+	QList<NetworkClientInfo> networkClients();
+	QString lastNetworkError();
 
 	void readProcessAsync();
 	Q_INVOKABLE void handleProcessCommand(QString _command);
@@ -39,12 +43,13 @@ private:
 	bool findWorkerClient(const QString & _worker, NetworkClientInfo * _nci);
 
 	QProcess * mProcess;
-	QMutex mProcessMutex;
 	QFuture<void> mProcessReadFuture;
 	NetworkServer * mNetServer;
 	QTimer * mKeepAliveTimer;
 	int mKeepAliveIntervalMs;
 	QByteArray mWorkerProcessData;
+	QMutex mProcessMutex;
+	QMutex mNetworkMutex;
 
 #pragma region Signals-Slots
 signals:

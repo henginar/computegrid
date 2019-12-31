@@ -33,9 +33,11 @@ ManagerProcessHost::~ManagerProcessHost()
 
 bool ManagerProcessHost::startNetworkServer(quint16 _port)
 {
-	if (mNetServer)
-		stopNetworkServer();
+	bool res = false;
+	stopNetworkServer();
 
+	mNetworkMutex.lock();
+	
 	mNetServer = new NetworkServer(_port);
 	QObject::connect(mNetServer, SIGNAL(clientConnected(NetworkClientInfo)), this, SLOT(networkClientConnected(NetworkClientInfo)));
 	QObject::connect(mNetServer, SIGNAL(clientDisconnected(NetworkClientInfo)), this, SLOT(networkClientDisconnected(NetworkClientInfo)));
@@ -43,16 +45,20 @@ bool ManagerProcessHost::startNetworkServer(quint16 _port)
 	QObject::connect(mNetServer, SIGNAL(packetReceived(NetworkClientInfo, NetworkPacket)), this, SLOT(networkPacketReceived(NetworkClientInfo, NetworkPacket)));
 	QObject::connect(mNetServer, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(networkError(QAbstractSocket::SocketError)));
 	
-	bool res = mNetServer->startServer();
-
-	if (res)
+	if (res = mNetServer->startServer())
 		mKeepAliveTimer->start(mKeepAliveIntervalMs);
+	
+	mNetworkMutex.unlock();
 
 	return res;
 }
 
 bool ManagerProcessHost::stopNetworkServer()
 {
+	bool res = false;
+
+	mNetworkMutex.lock();
+
 	if (mNetServer)
 	{
 		if (mKeepAliveTimer->isActive())
@@ -63,10 +69,67 @@ bool ManagerProcessHost::stopNetworkServer()
 
 		delete mNetServer;
 		mNetServer = nullptr;
-		return true;
+		res = true;
 	}
 
-	return false;
+	mNetworkMutex.unlock();
+
+	return res;
+}
+
+bool ManagerProcessHost::sendPacket(NetworkPacket & _np, NetworkClientInfo & _nci)
+{
+	bool res = false;
+
+	mNetworkMutex.lock();
+
+	if (mNetServer)
+		res = mNetServer->sendPacket(_np, _nci);
+
+	mNetworkMutex.unlock();
+
+	return res;
+}
+
+bool ManagerProcessHost::isNetworkListening()
+{
+	bool res = false;
+
+	mNetworkMutex.lock();
+
+	res = mNetServer && mNetServer->isListening();
+
+	mNetworkMutex.unlock();
+
+	return res;
+}
+
+QList<NetworkClientInfo> ManagerProcessHost::networkClients()
+{
+	QList<NetworkClientInfo> clients;
+
+	mNetworkMutex.lock();
+
+	if(mNetServer)
+		clients = mNetServer->clients();
+
+	mNetworkMutex.unlock();
+
+	return clients;
+}
+
+QString ManagerProcessHost::lastNetworkError()
+{
+	QString res;
+
+	mNetworkMutex.lock();
+
+	if (mNetServer)
+		res = mNetServer->lastError();
+
+	mNetworkMutex.unlock();
+
+	return res;
 }
 
 bool ManagerProcessHost::startProcess(quint16 _port)
@@ -76,6 +139,7 @@ bool ManagerProcessHost::startProcess(quint16 _port)
 	stopProcess();
 
 	mProcessMutex.lock();
+
 	mProcess = new QProcess();
 	mProcess->setReadChannel(QProcess::StandardOutput);
 	QObject::connect(mProcess, SIGNAL(started()), this, SLOT(processStarted()));
@@ -83,6 +147,7 @@ bool ManagerProcessHost::startProcess(quint16 _port)
 	mProcess->setWorkingDirectory(QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + "/manager/");
 	mProcess->start(QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + "/manager/manager.exe", QStringList());
 	res = mProcess->waitForStarted();
+
 	mProcessMutex.unlock();
 
 	res = startNetworkServer(_port);
@@ -105,6 +170,7 @@ bool ManagerProcessHost::stopProcess()
 		mProcessReadFuture.cancel();
 
 	mProcessMutex.lock();
+
 	if (mProcess)
 	{
 		try
@@ -119,6 +185,7 @@ bool ManagerProcessHost::stopProcess()
 		mProcess = nullptr;
 		res = true;
 	}
+
 	mProcessMutex.unlock();
 	
 	return res;
@@ -127,8 +194,10 @@ bool ManagerProcessHost::stopProcess()
 void ManagerProcessHost::writeToProcess(QString _cmd)
 {
 	mProcessMutex.lock();
+
 	if(mProcess)
 		mProcess->write((_cmd.simplified() + ComputeGridGlobals::ProcessCommandSuffix).toLocal8Bit());
+
 	mProcessMutex.unlock();
 }
 
@@ -263,8 +332,8 @@ void ManagerProcessHost::handleProcessCommand(QString _command)
 			NetworkClientInfo nci;
 			if (findWorkerClient(args.first(), &nci))
 			{
-				if (!mNetServer->sendPacket(np, nci))
-					emit log(QString("Network error: %1").arg(mNetServer->lastError()), LT_ERROR);
+				if (!sendPacket(np, nci))
+					emit log(QString("Network error: %1").arg(lastNetworkError()), LT_ERROR);
 			}
 			else
 				emit log(QString("Network client of worker %1 couldn't find.").arg(args.first()), LT_ERROR);
@@ -292,14 +361,14 @@ void ManagerProcessHost::keepAliveClients()
 	np.setTypeId(DPT_HEARTHBEAT);
 	np.setData(QByteArray::number(QDateTime::currentDateTime().toMSecsSinceEpoch()));
 
-	QList<NetworkClientInfo> & clients = mNetServer->clients();
+	QList<NetworkClientInfo> & clients = networkClients();
 	for (QList<NetworkClientInfo>::iterator it = clients.begin(); it != clients.end(); ++it)
-		mNetServer->sendPacket(np, *it);
+		sendPacket(np, *it);
 }
 
 bool ManagerProcessHost::findWorkerClient(const QString & _worker, NetworkClientInfo * _nci)
 {
-	QList<NetworkClientInfo> & clients = mNetServer->clients();
+	QList<NetworkClientInfo> & clients = networkClients();
 	for (QList<NetworkClientInfo>::iterator it = clients.begin(); it != clients.end(); ++it)
 	{
 		if ((*it).toString() == _worker)
@@ -329,19 +398,19 @@ void ManagerProcessHost::processFinished(int _exitCode, QProcess::ExitStatus _ex
 		(_exitStatus == QProcess::NormalExit && _exitCode == 0) ? LT_INFO : LT_ERROR
 	);
 
-	if (mNetServer && mNetServer->isListening())
+	if (isNetworkListening())
 	{
 		NetworkPacket np(NPT_DATA);
 		np.setTypeId(DPT_WORKER_EXIT);
 
-		QList<NetworkClientInfo> & clients = mNetServer->clients();
+		QList<NetworkClientInfo> & clients = networkClients();
 		for (QList<NetworkClientInfo>::iterator it = clients.begin(); it != clients.end(); ++it)
 		{
 			np.dataPtr()->clear();
 
 			QDataStream ds(np.dataPtr(), QIODevice::WriteOnly);
 			ds << (QStringList() << (*it).toString());
-			mNetServer->sendPacket(np, *it);
+			sendPacket(np, *it);
 		}
 	}
 }
@@ -353,7 +422,7 @@ void ManagerProcessHost::networkClientConnected(NetworkClientInfo _clientInfo)
 	NetworkPacket np(NPT_DATA);
 	np.setTypeId(DPT_GRID_ATTACH);
 	np.setData(mWorkerProcessData);
-	mNetServer->sendPacket(np, _clientInfo);
+	sendPacket(np, _clientInfo);
 }
 
 void ManagerProcessHost::networkClientDisconnected(NetworkClientInfo _clientInfo)

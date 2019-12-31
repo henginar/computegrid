@@ -28,16 +28,20 @@ public:
 	bool loadProcessArchive();
 
 private:
+	bool sendPacket(NetworkPacket & _np);
+	bool isNetworkConnected();
+
 	void readProcessAsync();
 	Q_INVOKABLE void handleProcessCommand(QString _command);
 
 	QProcess * mProcess;
-	QMutex mProcessMutex;
 	QFuture<void> mProcessReadFuture;
 	NetworkClient * mNetClient;
 	QTimer * mKeepAliveTimer;
 	int mKeepAliveIntervalMs;
 	bool mIsAlive;
+	QMutex mProcessMutex;
+	QMutex mNetworkMutex;
 
 #pragma region Signals-Slots
 signals:

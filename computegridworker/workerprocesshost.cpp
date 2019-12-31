@@ -28,20 +28,31 @@ WorkerProcessHost::~WorkerProcessHost()
 
 bool WorkerProcessHost::connectToNetworkServer(QString _ip, quint16 _port, uint _timeOut)
 {
-	if (mNetClient)
-		disconnectFromNetworkServer();
+	bool res = false;
+
+	disconnectFromNetworkServer();
+
+	mNetworkMutex.lock();
 
 	mNetClient = new NetworkClient(_ip, _port);
 	QObject::connect(mNetClient, SIGNAL(connected()), this, SLOT(networkConnected()));
 	QObject::connect(mNetClient, SIGNAL(disconnected()), this, SLOT(networkDisconnected()));
 	QObject::connect(mNetClient, SIGNAL(packetReceived(NetworkPacket)), this, SLOT(networkPacketReceived(NetworkPacket)));
 	QObject::connect(mNetClient, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(networkError(QAbstractSocket::SocketError)));
-	return mNetClient->connectToServer(_timeOut);
+	
+	res = mNetClient->connectToServer(_timeOut);
+
+	mNetworkMutex.unlock();
+
+	return res;
 }
 
 bool WorkerProcessHost::disconnectFromNetworkServer()
 {
 	bool res = false;
+
+	mNetworkMutex.lock();
+
 	if (mNetClient)
 	{
 		if (mNetClient->state() != QAbstractSocket::UnconnectedState)
@@ -50,6 +61,8 @@ bool WorkerProcessHost::disconnectFromNetworkServer()
 		delete mNetClient;
 		mNetClient = nullptr;
 	}
+
+	mNetworkMutex.unlock();
 
 	return res;
 }
@@ -153,6 +166,34 @@ bool WorkerProcessHost::loadProcessArchive()
 	return res;
 }
 
+bool WorkerProcessHost::sendPacket(NetworkPacket & _np)
+{
+	bool res = false;
+
+	mNetworkMutex.lock();
+
+	if (mNetClient)
+		res = mNetClient->sendPacket(_np);
+
+	mNetworkMutex.unlock();
+
+	return res;
+}
+
+bool WorkerProcessHost::isNetworkConnected()
+{
+	bool res = false;
+
+	mNetworkMutex.lock();
+
+	if (mNetClient)
+		res = mNetClient->state() == QAbstractSocket::ConnectedState;
+
+	mNetworkMutex.unlock();
+	
+	return res;
+}
+
 void WorkerProcessHost::readProcessAsync()
 {
 	bool run = true;
@@ -214,7 +255,7 @@ void WorkerProcessHost::handleProcessCommand(QString _command)
 
 		QDataStream ds(np.dataPtr(), QIODevice::WriteOnly);
 		ds << args;
-		mNetClient->sendPacket(np);
+		sendPacket(np);
 	}
 }
 
@@ -231,14 +272,14 @@ void WorkerProcessHost::processFinished(int _exitCode, QProcess::ExitStatus _exi
 		_exitStatus == QProcess::NormalExit ? LT_INFO : LT_ERROR
 	);
 
-	if (mNetClient->state() == QAbstractSocket::SocketState::ConnectedState)
+	if (isNetworkConnected())
 	{
 		NetworkPacket np(NPT_DATA);
 		np.setTypeId(DPT_WORKER_EXIT);
 		QDataStream ds(np.dataPtr(), QIODevice::WriteOnly);
 		ds << QString::number(_exitCode);
 		ds << QString::number(_exitStatus);
-		mNetClient->sendPacket(np);
+		sendPacket(np);
 	}
 }
 
@@ -306,7 +347,7 @@ void WorkerProcessHost::networkPacketReceived(NetworkPacket _packet)
 						np.setTypeId(DPT_GRID_WORKER_READY);
 						QDataStream dsOut(np.dataPtr(), QIODevice::WriteOnly);
 						dsOut << args;
-						mNetClient->sendPacket(np);
+						sendPacket(np);
 					}
 					else
 						err = "Worker process start error!";
@@ -328,7 +369,7 @@ void WorkerProcessHost::networkPacketReceived(NetworkPacket _packet)
 			np.setTypeId(DPT_LOG);
 			QDataStream dsOut(np.dataPtr(), QIODevice::WriteOnly);
 			dsOut << args;
-			mNetClient->sendPacket(np);
+			sendPacket(np);
 
 			emit log(err, LT_ERROR);
 		}
