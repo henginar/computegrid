@@ -36,6 +36,7 @@ UIComputeGridManager::UIComputeGridManager(QWidget * _parent)
 	QSettings settings(QCoreApplication::applicationName() + "_config.ini", QSettings::IniFormat);
 	settings.beginGroup("/General");
 	ui.spinBoxNetworkPort->setValue(settings.value("/ServerPort", NetworkingGlobals::DefaultServerPort).toUInt());
+	ui.spinBoxWorkerLimit->setValue(settings.value("/WorkerLimit", 0).toUInt());
 	settings.endGroup();
 
 	refreshWorkersList();
@@ -163,7 +164,7 @@ void UIComputeGridManager::on_pushButtonProcessorStart_clicked()
 {
 	ui.pushButtonProcessorStart->setEnabled(false);
 	ui.spinBoxNetworkPort->setEnabled(false);
-	if (mProcessHost.startProcess(ui.spinBoxNetworkPort->value()))
+	if (mProcessHost.startProcess(ui.spinBoxNetworkPort->value(), ui.spinBoxWorkerLimit->value()))
 	{
 		ui.pushButtonProcessorStop->setEnabled(true);
 		ui.groupBoxCommandPrompt->setEnabled(true);

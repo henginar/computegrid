@@ -112,6 +112,23 @@
                </widget>
               </item>
               <item>
+               <widget class="QLabel" name="labelWorkerLimit">
+                <property name="text">
+                 <string>Worker Limit</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QSpinBox" name="spinBoxWorkerLimit">
+                <property name="minimumSize">
+                 <size>
+                  <width>40</width>
+                  <height>0</height>
+                 </size>
+                </property>
+               </widget>
+              </item>
+              <item>
                <widget class="Line" name="line_3">
                 <property name="orientation">
                  <enum>Qt::Vertical</enum>
@@ -288,12 +305,13 @@
   <tabstop>pushButtonProcessorSetManager</tabstop>
   <tabstop>pushButtonProcessorSetWorker</tabstop>
   <tabstop>spinBoxNetworkPort</tabstop>
+  <tabstop>spinBoxWorkerLimit</tabstop>
   <tabstop>pushButtonProcessorStart</tabstop>
   <tabstop>pushButtonProcessorStop</tabstop>
-  <tabstop>listWidgetWorkers</tabstop>
   <tabstop>textEditLog</tabstop>
   <tabstop>lineEditCommandPrompt</tabstop>
   <tabstop>pushButtonCommandPromptSend</tabstop>
+  <tabstop>listWidgetWorkers</tabstop>
  </tabstops>
  <resources>
   <include location="uicomputegridmanager.qrc"/>

@@ -21,7 +21,7 @@ public:
 	ManagerProcessHost(int _keepAliveIntervalMs = NetworkingGlobals::DefaultTimeOut, QObject * _parent = nullptr);
 	~ManagerProcessHost();
 
-	bool startProcess(quint16 _port);
+	bool startProcess(quint16 _port, int _maxClients = 0);
 	bool stopProcess();
 	void writeToProcess(QString _cmd);
 
@@ -29,7 +29,7 @@ public:
 	bool attachWorkerArchive();
 
 private:
-	bool startNetworkServer(quint16 _port);
+	bool startNetworkServer(quint16 _port, int _maxClients = 0);
 	bool stopNetworkServer();
 	bool sendPacket(NetworkPacket & _np, NetworkClientInfo & _nci);
 	bool isNetworkListening();

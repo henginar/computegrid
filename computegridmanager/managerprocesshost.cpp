@@ -31,7 +31,7 @@ ManagerProcessHost::~ManagerProcessHost()
 	mKeepAliveTimer = nullptr;
 }
 
-bool ManagerProcessHost::startNetworkServer(quint16 _port)
+bool ManagerProcessHost::startNetworkServer(quint16 _port, int _maxClients)
 {
 	bool res = false;
 	stopNetworkServer();
@@ -45,6 +45,9 @@ bool ManagerProcessHost::startNetworkServer(quint16 _port)
 	QObject::connect(mNetServer, SIGNAL(packetReceived(NetworkClientInfo, NetworkPacket)), this, SLOT(networkPacketReceived(NetworkClientInfo, NetworkPacket)));
 	QObject::connect(mNetServer, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(networkError(QAbstractSocket::SocketError)));
 	
+	if (_maxClients > 0)
+		mNetServer->setMaxClients(_maxClients);
+
 	if (res = mNetServer->startServer())
 		mKeepAliveTimer->start(mKeepAliveIntervalMs);
 	
@@ -132,7 +135,7 @@ QString ManagerProcessHost::lastNetworkError()
 	return res;
 }
 
-bool ManagerProcessHost::startProcess(quint16 _port)
+bool ManagerProcessHost::startProcess(quint16 _port, int _maxClients)
 {
 	bool res = false;
 
@@ -150,7 +153,7 @@ bool ManagerProcessHost::startProcess(quint16 _port)
 
 	mProcessMutex.unlock();
 
-	res = startNetworkServer(_port);
+	res = startNetworkServer(_port, _maxClients);
 
 	if (res)
 		mProcessReadFuture = QtConcurrent::run(this, &ManagerProcessHost::readProcessAsync);
